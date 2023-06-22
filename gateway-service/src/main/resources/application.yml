@@ -1,0 +1,78 @@
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: ${EUREKA_SERVER_ADDRESS:http://localhost:8761/eureka}
+      
+
+server:
+  port: 9090
+  
+  
+endpoints:
+  restart:
+    enabled: true
+  shutdown:
+    enabled: true
+  health:
+    sensitive: false
+
+
+
+logging:
+  pattern: 
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%X{traceId:-},%X{spanId:-}] ${LOG_LEVEL_PATTERN:-%5p} %m%n"
+              
+spring:
+  output:
+    ansi:
+      enabled: always
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+      - id: order-service
+        uri: lb://order-service
+        predicates:
+        - Path=/order/**
+        filters:
+        - RewritePath=/order/(?<path>.*), /$\{path}
+      - id: payment-service
+        uri: lb://payment-service
+        predicates:
+        - Path=/payment/**
+        filters:
+        - RewritePath=/payment/(?<path>.*), /$\{path}
+      - id: product-service
+        uri: lb://product-service
+        predicates:
+        - Path=/product/**
+        filters:
+        - RewritePath=/product/(?<path>.*), /$\{path}
+      - id: openapi
+        uri: http://localhost:${server.port}
+        predicates:
+        - Path=/v3/api-docs/**
+        filters:
+        - RewritePath=/v3/api-docs/(?<path>.*), /$\{path}/v3/api-docs
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: order
+        url: /v3/api-docs/order
+      - name: payment
+        url: /v3/api-docs/payment
+      - name: product
+        url: /v3/api-docs/product
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+        
